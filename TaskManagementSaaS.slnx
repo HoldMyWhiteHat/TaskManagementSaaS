@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="TaskManagementSaaS.API/TaskManagementSaaS.API.csproj" />
+  <Project Path="TaskManagementSaaS.Application/TaskManagementSaaS.Application.csproj" />
+  <Project Path="TaskManagementSaaS.Domain/TaskManagementSaaS.Domain.csproj" />
+  <Project Path="TaskManagementSaaS.Infrastructure/TaskManagementSaaS.Infrastructure.csproj" />
+  <Project Path="TaskManagementSaaS.Persistence/TaskManagementSaaS.Persistence.csproj" />
+</Solution>
