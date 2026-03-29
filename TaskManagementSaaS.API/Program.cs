@@ -109,7 +109,7 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
-// ===== MIDDLEWARE PIPELINE (order matters!) =====
+//  MIDDLEWARE PIPELINE 
 
 // 1. Global Exception Handler (catches all unhandled errors)
 app.UseMiddleware<ExceptionMiddleware>();
