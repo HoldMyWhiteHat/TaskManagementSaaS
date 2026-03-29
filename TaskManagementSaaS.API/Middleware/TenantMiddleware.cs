@@ -1,4 +1,4 @@
-﻿namespace TaskManagementSaaS.API.Middleware
+/*﻿namespace TaskManagementSaaS.API.Middleware
 {
     public class TenantMiddleware
     {
@@ -24,7 +24,7 @@
             await _next(context);
         }
     }
-}
+}*/
 
 // Tenant a sees only tenant a projects
 // Tenant b sees only tenant b projents, so now tenant isolation is achieved
