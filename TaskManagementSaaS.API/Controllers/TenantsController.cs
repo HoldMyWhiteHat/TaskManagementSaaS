@@ -1,68 +1,37 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using TaskManagementSaaS.Domain.Entities;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using TaskManagementSaaS.Application.Commands.Tenants;
+using TaskManagementSaaS.Application.DTO.Tenants;
+using TaskManagementSaaS.Application.Queries.Tenants;
 
-namespace TaskManagementSaaS.Api.Controllers
+namespace TaskManagementSaaS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Admin")]
     public class TenantsController : ControllerBase
     {
-        private static readonly List<Tenant> _tenants = new List<Tenant>();
+        private readonly IMediator _mediator;
 
-        [HttpGet]
-        public IActionResult GetAll()
+        public TenantsController(IMediator mediator)
         {
-            return Ok(_tenants);
+            _mediator = mediator;
         }
 
-        [HttpGet("{id}")]
-        public IActionResult GetById(Guid id)
+        [HttpGet("my")]
+        public async Task<IActionResult> GetMyTenant()
         {
-            var tenant = _tenants.FirstOrDefault(t => t.Id == id);
-
-            if (tenant == null)
-                return NotFound();
-
-            return Ok(tenant);
+            var result = await _mediator.Send(new GetMyWorkspaceQuery());
+            if (result == null) return NotFound();
+            return Ok(result);
         }
 
-        [HttpPost]
-        public IActionResult Create(string name)
+        [HttpPut("my")]
+        public async Task<IActionResult> Update([FromBody] UpdateTenantDto dto)
         {
-            var tenant = new Tenant
-            {
-                Id = Guid.NewGuid(),
-                Name = name
-            };
-
-            _tenants.Add(tenant);
-
-            return CreatedAtAction(nameof(GetById), new { id = tenant.Id }, tenant);
-        }
-
-        [HttpPut("{id}")]
-        public IActionResult Update(Guid id, string name)
-        {
-            var tenant = _tenants.FirstOrDefault(t => t.Id == id);
-
-            if (tenant == null)
-                return NotFound();
-
-            tenant.Name = name;
-
-            return NoContent();
-        }
-
-        [HttpDelete("{id}")]
-        public IActionResult Delete(Guid id)
-        {
-            var tenant = _tenants.FirstOrDefault(t => t.Id == id);
-
-            if (tenant == null)
-                return NotFound();
-
-            _tenants.Remove(tenant);
-
+            var result = await _mediator.Send(new UpdateWorkspaceCommand(dto.Name));
+            if (!result.IsSuccess) return BadRequest(result.ErrorMessage);
             return NoContent();
         }
     }

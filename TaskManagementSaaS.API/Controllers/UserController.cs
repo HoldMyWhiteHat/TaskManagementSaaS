@@ -1,74 +1,65 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using TaskManagementSaaS.Domain.Entities;
+using System.Security.Claims;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using TaskManagementSaaS.Application.DTO.Users;
+using TaskManagementSaaS.Application.Queries.Users;
+using TaskManagementSaaS.Application.Commands.Users;
 
-namespace TaskManagementSaaS.Api.Controllers
+namespace TaskManagementSaaS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class UsersController : ControllerBase
+    [Authorize]
+    public class UserController : ControllerBase
     {
-        private static readonly List<User> _users = new List<User>();
+        private readonly IMediator _mediator;
 
-        [HttpGet]
-        public IActionResult GetAll()
+        public UserController(IMediator mediator)
         {
-            return Ok(_users);
+            _mediator = mediator;
         }
 
-        [HttpGet("{id}")]
-        public IActionResult GetById(Guid id)
+        [HttpGet]
+        public async Task<ActionResult<List<UserDto>>> GetAll()
         {
-            var user = _users.FirstOrDefault(u => u.Id == id);
-
-            if (user == null)
-                return NotFound();
-
-            return Ok(user);
+            return await _mediator.Send(new GetAllUsersQuery());
         }
 
         [HttpPost]
-        public IActionResult Create(string username, string email, string passwordHash, Guid tenantId)
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<Guid>> Create(CreateUserDto dto)
         {
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                Username = username,
-                Email = email,
-                PasswordHash = passwordHash,
-                TenantId = tenantId,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _users.Add(user);
-
-            return CreatedAtAction(nameof(GetById), new { id = user.Id }, user);
+            return await _mediator.Send(new CreateUserCommand(dto.Username, dto.Email, dto.Role));
         }
 
-        [HttpPut("{id}")]
-        public IActionResult Update(Guid id, string username, string email)
+        [HttpDelete("me")]
+        public async Task<IActionResult> DeleteMe()
         {
-            var user = _users.FirstOrDefault(u => u.Id == id);
+            var subjectId = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(subjectId)) return Unauthorized();
 
-            if (user == null)
-                return NotFound();
-
-            user.Username = username;
-            user.Email = email;
-
-            return NoContent();
+            var result = await _mediator.Send(new DeleteMyAccountCommand(subjectId));
+            if (!result) return NotFound();
+            return Ok();
         }
 
-        [HttpDelete("{id}")]
-        public IActionResult Delete(Guid id)
+        [HttpDelete("{userId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Delete(Guid userId)
         {
-            var user = _users.FirstOrDefault(u => u.Id == id);
+            var result = await _mediator.Send(new DeleteUserCommand(userId));
+            if (!result) return NotFound();
+            return Ok();
+        }
 
-            if (user == null)
-                return NotFound();
-
-            _users.Remove(user);
-
-            return NoContent();
+        [HttpDelete("{userId}/project/{projectId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Unassign(Guid userId, Guid projectId)
+        {
+            var result = await _mediator.Send(new UnassignUserFromProjectCommand(userId, projectId));
+            if (!result) return NotFound();
+            return Ok();
         }
     }
 }

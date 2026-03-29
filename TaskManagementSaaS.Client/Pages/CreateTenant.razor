@@ -1,0 +1,83 @@
+@page "/create-tenant"
+@using Microsoft.AspNetCore.Authorization
+@using TaskManagementSaaS.Client.Services
+@inject UserService UserService
+@inject NavigationManager Navigation
+@attribute [Authorize]
+
+<PageTitle>Create Workspace</PageTitle>
+
+<div class="container" style="max-width: 480px; margin-top: 10vh;">
+    <div class="text-center mb-4">
+        <div style="width: 48px; height: 48px; background: var(--gold-primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+            <span class="oi oi-bolt" style="color: var(--navy-deep); font-size: 1.5rem;"></span>
+        </div>
+        <h2>Welcome to HoldMyWhiteHat</h2>
+        <p class="text-muted">Name your workspace to get started.</p>
+    </div>
+
+    <div class="glass-card">
+        <div class="mb-3">
+            <label class="form-label text-muted small">Workspace Name</label>
+            <input type="text" class="form-control" @bind="tenantName" placeholder="e.g. Acme Corp" />
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="mb-3 p-3" style="background: rgba(255, 95, 86, 0.1); border: 1px solid rgba(255, 95, 86, 0.3); border-radius: 8px; color: #FF5F56; font-size: 0.9rem;">
+                @errorMessage
+            </div>
+        }
+
+        <button class="btn btn-gold w-100" @onclick="HandleCreateTenant" disabled="@loading">
+            @if (loading)
+            {
+                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                <span>Creating...</span>
+            }
+            else
+            {
+                <span>Create Workspace</span>
+            }
+        </button>
+    </div>
+</div>
+
+@code {
+    private string? tenantName;
+    private string? errorMessage;
+    private bool loading = false;
+
+    private async Task HandleCreateTenant()
+    {
+        if (string.IsNullOrWhiteSpace(tenantName))
+        {
+            errorMessage = "Please enter a workspace name.";
+            return;
+        }
+
+        loading = true;
+        errorMessage = null;
+
+        try
+        {
+            var result = await UserService.SyncUserAsync(null, null, tenantName);
+            if (result != null && result.TenantId.HasValue)
+            {
+                Navigation.NavigateTo("/dashboard", true);
+            }
+            else
+            {
+                errorMessage = "Failed to create workspace. Please try another name.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = "An error occurred: " + ex.Message;
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

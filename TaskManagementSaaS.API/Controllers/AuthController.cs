@@ -1,46 +1,59 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using TaskManagementSaaS.Domain.Entities;
+using System.Security.Claims;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using TaskManagementSaaS.Application.Commands.Auth;
 
-namespace TaskManagementSaaS.Api.Controllers
+namespace TaskManagementSaaS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
+    [EnableRateLimiting("auth")]
     public class AuthController : ControllerBase
     {
-        private static readonly List<User> _users = new List<User>();
+        private readonly IMediator _mediator;
 
-        [HttpPost("register")]
-        public IActionResult Register(string username, string email, string password, Guid tenantId)
+        public AuthController(IMediator mediator)
         {
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                Username = username,
-                Email = email,
-                PasswordHash = password, // later we hash it
-                TenantId = tenantId,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _users.Add(user);
-
-            return Ok(user);
+            _mediator = mediator;
         }
 
-        [HttpPost("login")]
-        public IActionResult Login(string email, string password)
+        public class SyncRequestDto
         {
-            var user = _users.FirstOrDefault(u =>
-                u.Email == email &&
-                u.PasswordHash == password);
+            public string? Email { get; set; }
+            public string? Name { get; set; }
+            public string? TenantName { get; set; }
+        }
 
-            if (user == null)
-                return Unauthorized("Invalid credentials");
+        [HttpPost("sync")]
+        public async Task<IActionResult> Sync([FromBody] SyncRequestDto? dto)
+        {
+            var subjectId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(subjectId)) return Unauthorized();
+
+            var email = User.FindFirstValue(ClaimTypes.Email) ?? User.FindFirstValue("email") ?? dto?.Email ?? "";
+            var name = User.FindFirstValue(ClaimTypes.Name) ?? User.FindFirstValue("name") ?? dto?.Name ?? email;
+
+            var result = await _mediator.Send(new SyncUserCommand(subjectId, email, name, dto?.TenantName));
+
+            if (result.RequiresTenantName)
+            {
+                return StatusCode(428, new { message = "TenantNameRequired" }); 
+            }
+
+            if (!result.IsSuccess)
+            {
+                return BadRequest(result.ErrorMessage);
+            }
 
             return Ok(new
             {
-                message = "Login successful",
-                userId = user.Id
+                Role = result.Role,
+                TenantId = result.TenantId,
+                TenantName = result.TenantName,
+                RequiresTenantName = result.RequiresTenantName
             });
         }
     }

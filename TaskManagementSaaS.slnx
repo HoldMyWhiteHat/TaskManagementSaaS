@@ -4,4 +4,5 @@
   <Project Path="TaskManagementSaaS.Domain/TaskManagementSaaS.Domain.csproj" />
   <Project Path="TaskManagementSaaS.Infrastructure/TaskManagementSaaS.Infrastructure.csproj" />
   <Project Path="TaskManagementSaaS.Persistence/TaskManagementSaaS.Persistence.csproj" />
+  <Project Path="TaskManagementSaaS.Client/TaskManagementSaaS.Client.csproj" />
 </Solution>

@@ -1,0 +1,400 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700&display=swap');
+
+:root {
+    --navy-deep: #000B18;
+    --navy-mid: #00152B;
+    --navy-light: #002144;
+    --gold-primary: #F2D2A9;
+    --gold-hover: #e5c192;
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(242, 210, 169, 0.12);
+    --glass-blur: blur(12px);
+    --text-main: #FFFFFF;
+    --text-muted: rgba(255, 255, 255, 0.6);
+    --sidebar-width: 260px;
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--navy-deep);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+}
+
+h1, h2, h3, .navbar-brand {
+    font-family: 'Outfit', sans-serif;
+    color: var(--gold-primary);
+}
+
+/* Layout */
+.page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    transition: var(--transition-smooth);
+}
+
+/* Sidebar Styling */
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+    background: linear-gradient(180deg, var(--navy-mid) 0%, var(--navy-deep) 100%);
+    border-right: 1px solid var(--glass-border);
+    z-index: 1000;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-muted) !important;
+    padding: 12px 20px;
+    margin: 4px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    transition: var(--transition-smooth);
+    text-decoration: none;
+}
+
+.nav-link:hover {
+    background: var(--glass-bg);
+    color: var(--gold-primary) !important;
+    transform: translateX(4px);
+}
+
+.nav-link.active {
+    background: rgba(242, 210, 169, 0.08);
+    color: var(--gold-primary) !important;
+    border-left: 3px solid var(--gold-primary);
+}
+
+/* Top Row - The Glass Bar */
+.top-row {
+    position: sticky;
+    top: 0;
+    height: 64px;
+    background: rgba(0, 11, 24, 0.65);
+    backdrop-filter: var(--glass-blur);
+    border-bottom: 1px solid var(--glass-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 2rem;
+    z-index: 900;
+}
+
+/* Glass Card System */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 24px;
+    transition: var(--transition-smooth);
+}
+
+.glass-card:hover {
+    border-color: rgba(242, 210, 169, 0.25);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Buttons */
+.btn-gold {
+    background: var(--gold-primary);
+    color: var(--navy-deep) !important;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: var(--transition-smooth);
+}
+
+.btn-gold:hover {
+    background: var(--gold-hover);
+    box-shadow: 0 0 20px rgba(242, 210, 169, 0.2);
+}
+
+.btn-gold.btn-lg {
+    padding: 14px 32px;
+    font-size: 1rem;
+}
+
+.btn-outline-gold {
+    background: transparent;
+    color: var(--gold-primary) !important;
+    border: 1px solid var(--gold-primary);
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: var(--transition-smooth);
+}
+
+.btn-outline-gold:hover {
+    background: rgba(242, 210, 169, 0.1);
+}
+
+.btn-outline-gold.btn-lg {
+    padding: 14px 32px;
+    font-size: 1rem;
+}
+
+/* Form Styles */
+.form-control, .form-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: white;
+    border-radius: 8px;
+    padding: 10px 14px;
+}
+
+.form-control:focus, .form-select:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--gold-primary);
+    box-shadow: none;
+    color: white;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+/* ===== LANDING PAGE ===== */
+.landing-page {
+    padding: 0;
+}
+
+.landing-hero {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.hero-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 3.5rem;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--text-main);
+    margin-bottom: 1.5rem;
+}
+
+.hero-subtitle {
+    font-size: 1.15rem;
+    color: var(--text-muted);
+    max-width: 520px;
+    margin: 0 auto 2.5rem;
+    line-height: 1.7;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+/* Features */
+.features-section {
+    padding: 4rem 0;
+}
+
+.feature-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 2rem;
+    height: 100%;
+    transition: var(--transition-smooth);
+}
+
+.feature-card:hover {
+    border-color: rgba(242, 210, 169, 0.3);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.feature-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(242, 210, 169, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+}
+
+.feature-icon span {
+    color: var(--gold-primary);
+    font-size: 1.3rem;
+}
+
+.feature-card h4 {
+    color: var(--text-main);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.feature-card p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* How It Works */
+.how-it-works {
+    padding: 4rem 0;
+    text-align: center;
+}
+
+.how-it-works h2 {
+    margin-bottom: 3rem;
+}
+
+.steps-grid {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0;
+}
+
+.step-item {
+    flex: 1;
+    max-width: 200px;
+    text-align: center;
+    padding: 0 1rem;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    background: rgba(242, 210, 169, 0.1);
+    border: 1px solid var(--glass-border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold-primary);
+    font-weight: 700;
+    font-size: 1rem;
+    margin: 0 auto 1rem;
+}
+
+.step-item h5 {
+    color: var(--text-main);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.step-item p {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.step-divider {
+    width: 40px;
+    height: 1px;
+    background: var(--glass-border);
+    margin-top: 20px;
+    flex-shrink: 0;
+}
+
+/* CTA */
+.landing-cta {
+    text-align: center;
+    padding: 4rem 2rem;
+    margin: 2rem 0;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+}
+
+.landing-cta h2 {
+    margin-bottom: 0.75rem;
+}
+
+.landing-cta p {
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+}
+
+/* ===== DASHBOARD STATS ===== */
+.stat-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: var(--transition-smooth);
+}
+
+.stat-card:hover {
+    border-color: rgba(242, 210, 169, 0.25);
+}
+
+.stat-icon {
+    width: 44px;
+    height: 44px;
+    background: rgba(242, 210, 169, 0.1);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold-primary);
+    font-size: 1.2rem;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    color: var(--text-main);
+    margin: 0;
+}
+
+.stat-label {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* ===== EMPTY STATE ===== */
+.empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text-muted);
+}
+
+.empty-state p {
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+@media (max-width: 991.98px) {
+    main { margin-left: 0; }
+    .sidebar { display: none; }
+    .hero-title { font-size: 2.5rem; }
+    .steps-grid { flex-direction: column; align-items: center; gap: 1.5rem; }
+    .step-divider { width: 1px; height: 24px; }
+}

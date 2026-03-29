@@ -1,0 +1,219 @@
+@page "/projects"
+@using Microsoft.AspNetCore.Authorization
+@using TaskManagementSaaS.Client.Services
+@using TaskManagementSaaS.Application.DTO.Projects
+@inject ProjectService ProjectService
+@inject UserService UserService
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@attribute [Authorize]
+
+<PageTitle>Projects</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Projects</h1>
+    <button class="btn btn-gold" @onclick="() => showCreateForm = true">
+        <i class="bi bi-plus-lg me-2"></i> New Project
+    </button>
+</div>
+
+@if (showCreateForm)
+{
+    <div class="glass-card mb-4">
+        <h5 class="mb-3" style="color: var(--gold-primary);">Create New Project</h5>
+        <div class="row g-3 align-items-end">
+            <div class="col-md-8">
+                <label class="form-label text-muted small">Project Name</label>
+                <input type="text" class="form-control" @bind="newProject.Name" placeholder="e.g. Marketing Campaign" />
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button class="btn btn-gold w-100" @onclick="CreateProject">Save Project</button>
+                <button class="btn btn-outline-secondary" @onclick="() => showCreateForm = false">Cancel</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (projects == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-gold-subtle" role="status"></div>
+    </div>
+}
+else
+{
+    <div class="glass-card p-0 overflow-hidden">
+        <table class="table table-dark table-hover mb-0" style="--bs-table-bg: transparent;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--glass-border);">
+                    <th class="ps-4 py-3 text-muted small fw-bold" style="width: 25%;">PROJECT NAME</th>
+                    <th class="py-3 text-muted small fw-bold" style="width: 35%;">TEAM MEMBERS</th>
+                    <th class="py-3 text-muted small fw-bold" style="width: 15%;">TASKS</th>
+                    <th class="py-3 text-muted small fw-bold" style="width: 15%;">CREATED</th>
+                    <th class="pe-4 py-3 text-end text-muted small fw-bold" style="width: 10%;">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var project in projects)
+                {
+                    <tr style="border-bottom: 1px solid var(--glass-border); vertical-align: middle;">
+                        <td class="ps-4 fw-medium">
+                            <div class="py-4">
+                                <i class="bi bi-folder2 me-2" style="color: var(--gold-primary);"></i> @project.Name
+                            </div>
+                        </td>
+                        <td>
+                            <div class="py-4">
+                                <div class="d-flex flex-wrap gap-1">
+                                    @foreach (var member in project.Members)
+                                    {
+                                        <span class="badge rounded-pill" style="background: rgba(242, 210, 169, 0.1); color: var(--gold-primary); border: 1px solid var(--glass-border); font-weight: 500;">
+                                            @member.Username
+                                            <AuthorizeView Roles="Admin">
+                                                <button type="button" class="btn-close btn-close-white ms-1" style="font-size: 0.5rem; filter: sepia(1) saturate(5) hue-rotate(-20deg);" @onclick="() => UnassignMember(member.Id, project.Id)"></button>
+                                            </AuthorizeView>
+                                        </span>
+                                    }
+                                    @if (!project.Members.Any())
+                                    {
+                                        <span class="text-muted small italic">No members assigned</span>
+                                    }
+                                </div>
+                                <AuthorizeView Roles="Admin">
+                                    <div class="mt-2 text-start">
+                                        @if (assigningProjectId == project.Id)
+                                        {
+                                            <div class="d-flex gap-1 align-items-center">
+                                                <select class="form-select form-select-sm bg-dark text-white border-secondary" @bind="selectedUserIdToAssign" style="font-size: 0.75rem; max-width: 150px;">
+                                                    <option value="">Select user...</option>
+                                                    @if (users != null)
+                                                    {
+                                                        foreach (var u in users.Where(u => !project.Members.Any(m => m.Id == u.Id)))
+                                                        {
+                                                            <option value="@u.Id">@(u.Username.Contains("@") ? u.Username.Split('@')[0] : u.Username)</option>
+                                                        }
+                                                    }
+                                                </select>
+                                                <button class="btn btn-sm btn-gold p-1 px-2" @onclick="() => ApplyUserAssignment(project.Id)"><i class="bi bi-check2"></i></button>
+                                                <button class="btn btn-sm btn-outline-secondary p-1 px-2 border-0" @onclick="() => { assigningProjectId = null; selectedUserIdToAssign = string.Empty; }"><i class="bi bi-x-lg"></i></button>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-sm btn-outline-secondary rounded-pill border-0" @onclick="() => assigningProjectId = project.Id" style="font-size: 0.75rem;">
+                                                <i class="bi bi-person-plus"></i> Add Member
+                                            </button>
+                                        }
+                                    </div>
+                                </AuthorizeView>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="py-4">
+                                <span class="badge bg-dark border border-secondary">@project.TaskCount Tasks</span>
+                            </div>
+                        </td>
+                        <td class="text-muted small">
+                            <div class="py-4">@project.CreatedAt.ToLocalTime().ToString("MMM dd, yyyy")</div>
+                        </td>
+                        <td class="pe-4 text-end">
+                            <div class="py-4">
+                                <button class="btn btn-sm btn-outline-danger border-0" @onclick="() => DeleteProject(project.Id)">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<ProjectDto>? projects;
+    private List<TaskManagementSaaS.Application.DTO.Users.UserDto>? users;
+    private bool showCreateForm = false;
+    private CreateProjectDto newProject = new();
+    
+    // UI state for assigning users
+    private Guid? assigningProjectId = null;
+    private string selectedUserIdToAssign = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (TaskManagementSaaS.Client.Infrastructure.CustomUserFactory.RequiresTenantCreation)
+        {
+            Navigation.NavigateTo("/create-tenant");
+            return;
+        }
+        await LoadProjects();
+        users = await UserService.GetAllUsersAsync();
+    }
+
+    private async Task LoadProjects()
+    {
+        projects = await ProjectService.GetAllAsync();
+    }
+
+    private async Task CreateProject()
+    {
+        if (string.IsNullOrWhiteSpace(newProject.Name)) return;
+        try 
+        {
+            await ProjectService.CreateAsync(newProject);
+            newProject = new();
+            showCreateForm = false;
+            await LoadProjects();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", "Error creating project: " + ex.Message);
+        }
+    }
+
+    private async Task DeleteProject(Guid id)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this project?"))
+        {
+            try
+            {
+                await ProjectService.DeleteAsync(id);
+                await LoadProjects();
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("alert", "Error deleting project: " + ex.Message);
+            }
+        }
+    }
+
+    private async Task UnassignMember(Guid userId, Guid projectId)
+    {
+        try
+        {
+            await UserService.UnassignFromProjectAsync(userId, projectId);
+            await LoadProjects();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", "Error unassigning user: " + ex.Message);
+        }
+    }
+
+    private async Task ApplyUserAssignment(Guid projectId)
+    {
+        if (string.IsNullOrEmpty(selectedUserIdToAssign) || !Guid.TryParse(selectedUserIdToAssign, out var userId)) return;
+        try
+        {
+            await ProjectService.AssignUserAsync(projectId, userId);
+            assigningProjectId = null;
+            selectedUserIdToAssign = string.Empty;
+            await LoadProjects();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", "Error assigning user: " + ex.Message);
+        }
+    }
+}

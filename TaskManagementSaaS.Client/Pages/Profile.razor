@@ -1,0 +1,112 @@
+@page "/profile"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.WebAssembly.Authentication
+@using System.Security.Claims
+@using TaskManagementSaaS.Client.Services
+@inject AuthenticationStateProvider AuthStateProvider
+@inject UserService UserService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@attribute [Authorize]
+
+<PageTitle>My Profile</PageTitle>
+
+<h1 class="mb-4">My Profile</h1>
+
+<div class="glass-card" style="max-width: 600px;">
+    @if (loading)
+    {
+        <div class="text-center py-4">
+            <div class="spinner-border spinner-border-sm" style="color: var(--gold-primary);" role="status"></div>
+        </div>
+    }
+    else
+    {
+        <div class="mb-4">
+            <label class="text-muted small d-block mb-1" style="text-transform: uppercase; letter-spacing: 0.5px;">Username</label>
+            <p class="fw-medium mb-0" style="font-size: 1.1rem;">@username</p>
+        </div>
+        <div class="mb-4">
+            <label class="text-muted small d-block mb-1" style="text-transform: uppercase; letter-spacing: 0.5px;">Email</label>
+            <p class="text-muted mb-0" style="font-size: 1.1rem;">@email</p>
+        </div>
+        <div class="mb-4">
+            <label class="text-muted small d-block mb-1" style="text-transform: uppercase; letter-spacing: 0.5px;">Role</label>
+            <span class="badge rounded-pill" 
+                  style="background: rgba(242, 210, 169, 0.1); border: 1px solid var(--gold-primary); color: var(--gold-primary); padding: 0.45rem 1.2rem; font-size: 0.9rem; display: inline-block;">
+                @role
+            </span>
+        </div>
+
+        <div style="border-top: 1px solid rgba(255, 95, 86, 0.2); margin-top: 2rem; padding-top: 1.5rem;">
+            <h5 style="color: #FF5F56;">Danger Zone</h5>
+            <p class="text-muted small">Once you delete your account, there is no going back.</p>
+            <button class="btn" style="background: rgba(255, 95, 86, 0.1); border: 1px solid rgba(255, 95, 86, 0.3); color: #FF5F56; font-weight: 600;" @onclick="HandleDeleteAccount">
+                Delete Account
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    private string? username;
+    private string? email;
+    private string? role;
+    private string? tenantName;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (TaskManagementSaaS.Client.Infrastructure.CustomUserFactory.RequiresTenantCreation)
+        {
+            Navigation.NavigateTo("/create-tenant");
+            return;
+        }
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        // Get email from Auth0 claims
+        email = user.FindFirst("email")?.Value ?? user.FindFirst(ClaimTypes.Email)?.Value;
+
+        // Get the actual username from the sync result (not the Auth0 name which is often the email)
+        // The role and tenant info also come from the sync result
+        role = user.FindFirst(ClaimTypes.Role)?.Value ?? user.FindFirst("https://taskmanagement.com/roles")?.Value;
+        tenantName = user.FindFirst("TenantName")?.Value;
+
+        // Get the display name: prefer the "nickname" or "given_name" from Auth0, or fallback to "name"
+        username = user.FindFirst("nickname")?.Value 
+            ?? user.FindFirst("given_name")?.Value
+            ?? user.FindFirst("name")?.Value 
+            ?? user.FindFirst(ClaimTypes.Name)?.Value;
+
+        // If username is still the email, try to extract just the local part
+        if (username == email && !string.IsNullOrEmpty(email))
+        {
+            username = email.Split('@')[0];
+        }
+
+        loading = false;
+    }
+
+    private async Task HandleDeleteAccount()
+    {
+        string warning = role == "Admin" 
+            ? "WARNING: As an Admin, deleting your account will delete the entire workspace and all data. Are you sure? This cannot be undone." 
+            : "Are you sure you want to delete your account? This cannot be undone.";
+
+        if (await JS.InvokeAsync<bool>("confirm", warning))
+        {
+            try
+            {
+                await UserService.DeleteMyAccountAsync();
+                await JS.InvokeVoidAsync("alert", "Account deletion successful. You will be logged out.");
+                Navigation.NavigateToLogout("authentication/logout");
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("alert", "Error deleting account: " + ex.Message);
+            }
+        }
+    }
+}

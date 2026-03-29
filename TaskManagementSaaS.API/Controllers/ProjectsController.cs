@@ -1,66 +1,53 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using TaskManagementSaaS.Domain.Entities;
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using TaskManagementSaaS.Application.Commands.Projects;
+using TaskManagementSaaS.Application.DTO.Projects;
+using TaskManagementSaaS.Application.Queries.Projects;
 
-namespace TaskManagementSaaS.Api.Controllers
+namespace TaskManagementSaaS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ProjectsController : ControllerBase
     {
-        private static readonly List<Project> _projects = new List<Project>();
+        private readonly IMediator _mediator;
 
-        [HttpGet]
-        public IActionResult GetAll()
+        public ProjectsController(IMediator mediator)
         {
-            return Ok(_projects);
+            _mediator = mediator;
         }
 
-        [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        [HttpGet]
+        public async Task<ActionResult<List<ProjectDto>>> GetAll()
         {
-            var project = _projects.FirstOrDefault(p => p.Id == id);
-
-            if (project == null)
-                return NotFound();
-
-            return Ok(project);
+            return await _mediator.Send(new GetAllProjectsQuery());
         }
 
         [HttpPost]
-        public IActionResult Create(Project project)
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<Guid>> Create(CreateProjectDto dto)
         {
-            project.Id = _projects.Count + 1;
-
-            _projects.Add(project);
-
-            return CreatedAtAction(nameof(GetById), new { id = project.Id }, project);
+            return await _mediator.Send(new CreateProjectCommand(dto.Name));
         }
 
-        [HttpPut("{id}")]
-        public IActionResult Update(int id, Project updatedProject)
+        [HttpPost("{id}/users/{userId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AssignUser(Guid id, Guid userId)
         {
-            var project = _projects.FirstOrDefault(p => p.Id == id);
-
-            if (project == null)
-                return NotFound();
-
-            project.Name = updatedProject.Name;
-            project.TenantId = updatedProject.TenantId;
-
-            return NoContent();
+            var result = await _mediator.Send(new AssignUserToProjectCommand(id, userId));
+            if (!result) return NotFound();
+            return Ok();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Delete(Guid id)
         {
-            var project = _projects.FirstOrDefault(p => p.Id == id);
-
-            if (project == null)
-                return NotFound();
-
-            _projects.Remove(project);
-
-            return NoContent();
+            var result = await _mediator.Send(new DeleteProjectCommand(id));
+            if (!result) return NotFound();
+            return Ok();
         }
     }
 }

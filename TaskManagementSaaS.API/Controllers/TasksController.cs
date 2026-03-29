@@ -1,68 +1,60 @@
+using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using TaskManagementSaaS.Domain.Entities;
+using TaskManagementSaaS.Application.Commands.Tasks;
+using TaskManagementSaaS.Application.DTO.Tasks;
+using TaskManagementSaaS.Application.Queries.Tasks;
 
-namespace TaskManagementSaaS.Api.Controllers
+namespace TaskManagementSaaS.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class TasksController : ControllerBase
     {
-        private static readonly List<TaskItem> _tasks = new List<TaskItem>();
+        private readonly IMediator _mediator;
 
-        [HttpGet]
-        public IActionResult GetAll()
+        public TasksController(IMediator mediator)
         {
-            return Ok(_tasks);
+            _mediator = mediator;
         }
 
-        [HttpGet("{id}")]
-        public IActionResult GetById(Guid id)
+        [HttpGet]
+        public async Task<ActionResult<List<TaskDto>>> GetAll([FromQuery] Guid? projectId)
         {
-            var task = _tasks.FirstOrDefault(t => t.Id == id);
-
-            if (task == null)
-                return NotFound();
-
-            return Ok(task);
+            return await _mediator.Send(new GetAllTasksQuery(projectId));
         }
 
         [HttpPost]
-        public IActionResult Create(TaskItem task)
+        [Authorize(Roles = "Admin")]
+        public async Task<ActionResult<Guid>> Create(CreateTaskDto dto)
         {
-            task.Id = Guid.NewGuid();
-            task.CreatedAt = DateTime.UtcNow;
-
-            _tasks.Add(task);
-
-            return CreatedAtAction(nameof(GetById), new { id = task.Id }, task);
+            return await _mediator.Send(new CreateTaskCommand(dto.Title, dto.Description, dto.Priority, dto.ProjectId));
         }
 
-        [HttpPut("{id}")]
-        public IActionResult Update(Guid id, TaskItem updatedTask)
+        [HttpPost("{id}/complete")]
+        public async Task<IActionResult> Complete(Guid id)
         {
-            var task = _tasks.FirstOrDefault(t => t.Id == id);
+            var result = await _mediator.Send(new CompleteTaskCommand(id));
+            if (!result) return BadRequest("Could not complete task.");
+            return Ok();
+        }
 
-            if (task == null)
-                return NotFound();
-
-            task.Title = updatedTask.Title;
-            task.Description = updatedTask.Description;
-            task.IsCompleted = updatedTask.IsCompleted;
-
-            return NoContent();
+        [HttpPost("{id}/claim")]
+        public async Task<IActionResult> Claim(Guid id)
+        {
+            var result = await _mediator.Send(new ClaimTaskCommand(id));
+            if (!result) return BadRequest("Could not claim task.");
+            return Ok();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(Guid id)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Delete(Guid id)
         {
-            var task = _tasks.FirstOrDefault(t => t.Id == id);
-
-            if (task == null)
-                return NotFound();
-
-            _tasks.Remove(task);
-
-            return NoContent();
+            var result = await _mediator.Send(new DeleteTaskCommand(id));
+            if (!result) return BadRequest("Only Admins can delete completed tasks, or task not found.");
+            return Ok();
         }
     }
 }

@@ -1,0 +1,66 @@
+.sidebar {
+    background-color: #001f3f;
+    min-width: 280px;
+    height: 100vh;
+    border-right: 1px solid rgba(242, 210, 169, 0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    padding: 0.8rem 1.5rem;
+    color: #cbd5e1;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-radius: 12px;
+    margin: 0.2rem 1rem;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+}
+
+.nav-link.active {
+    background-color: rgba(242, 210, 169, 0.1);
+    color: #F2D2A9;
+    font-weight: 600;
+}
+
+.nav-link.active i, .nav-link.active span {
+    color: #F2D2A9;
+}
+
+.nav-link i {
+    width: 24px;
+    margin-right: 12px;
+    font-size: 1.2rem;
+}
+
+.brand-section {
+    padding: 2rem 1.5rem;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(242, 210, 169, 0.1);
+}
+
+.brand-logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #F2D2A9;
+    letter-spacing: -1px;
+    text-shadow: 0 0 20px rgba(242, 210, 169, 0.2);
+}
+
+.nav-scrollable {
+    flex-grow: 1;
+    overflow-y: auto;
+}
+
+.profile-summary {
+    padding: 1.5rem;
+    border-top: 1px solid rgba(242, 210, 169, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+}

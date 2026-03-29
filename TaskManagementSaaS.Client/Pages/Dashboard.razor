@@ -1,0 +1,211 @@
+@page "/dashboard"
+@using Microsoft.AspNetCore.Authorization
+@using TaskManagementSaaS.Client.Services
+@using TaskManagementSaaS.Application.DTO.Projects
+@using TaskManagementSaaS.Application.DTO.Tasks
+@using TaskManagementSaaS.Application.DTO.Activity
+@inject ProjectService ProjectService
+@inject TaskService TaskService
+@inject ActivityService ActivityService
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@attribute [Authorize]
+
+<PageTitle>Dashboard</PageTitle>
+
+<h1 class="mb-1">Dashboard</h1>
+@if (!string.IsNullOrEmpty(tenantName))
+{
+    <p class="text-muted mb-4" style="font-size: 0.95rem;"><span class="oi oi-briefcase me-2" style="color: var(--gold-primary);"></span>@tenantName</p>
+}
+else
+{
+    <div class="mb-4"></div>
+}
+
+<!-- Stats Row -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="stat-icon">
+                    <span class="oi oi-folder"></span>
+                </div>
+                <div>
+                    <p class="stat-label">Projects</p>
+                    <p class="stat-value">@projects.Count</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="stat-icon">
+                    <span class="oi oi-list"></span>
+                </div>
+                <div>
+                    <p class="stat-label">Total Tasks</p>
+                    <p class="stat-value">@allTasks.Count</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="stat-icon" style="background: rgba(39, 201, 63, 0.1);">
+                    <span class="oi oi-check" style="color: #27C93F;"></span>
+                </div>
+                <div>
+                    <p class="stat-label">Completed</p>
+                    <p class="stat-value">@completedCount</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="stat-icon" style="background: rgba(255, 95, 86, 0.1);">
+                    <span class="oi oi-warning" style="color: #FF5F56;"></span>
+                </div>
+                <div>
+                    <p class="stat-label">Open</p>
+                    <p class="stat-value">@openCount</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Row -->
+<div class="row g-4">
+    <!-- Recent Tasks -->
+    <div class="col-md-7">
+        <div class="glass-card">
+            <h5 class="mb-3" style="color: var(--gold-primary);">Recent Tasks</h5>
+            @if (recentTasks.Any())
+            {
+                @foreach (var task in recentTasks)
+                {
+                    <div class="d-flex align-items-center justify-content-between py-2" style="border-bottom: 1px solid var(--glass-border);">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="badge" style="background: @GetPriorityColor(task.Priority); font-size: 0.7rem; min-width: 55px;">@task.Priority</span>
+                            <div>
+                                <span class="fw-medium" style="font-size: 0.9rem;">@task.Title</span>
+                                <small class="d-block text-muted" style="font-size: 0.75rem;">@(task.AssigneeName ?? "Unassigned")</small>
+                            </div>
+                        </div>
+                        <span class="badge rounded-pill border @GetStatusBorderClass(task.Status) @GetStatusTextClass(task.Status)" 
+                              style="background: rgba(255,255,255,0.05); font-size: 0.7rem;">
+                            @task.Status
+                        </span>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <p>No tasks yet. Create your first task in the Tasks page.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Activity Feed -->
+    <div class="col-md-5">
+        <div class="glass-card">
+            <h5 class="mb-3" style="color: var(--gold-primary);">Recent Activity</h5>
+            @if (activities == null)
+            {
+                <div class="text-center py-4">
+                    <div class="spinner-border spinner-border-sm" style="color: var(--gold-primary);" role="status"></div>
+                </div>
+            }
+            else if (activities.Any())
+            {
+                @foreach (var activity in activities)
+                {
+                    <div class="d-flex gap-3 mb-3">
+                        <div style="width: 6px; height: 6px; border-radius: 50%; background: var(--gold-primary); margin-top: 8px; flex-shrink: 0;"></div>
+                        <div>
+                            <p class="mb-0" style="font-size: 0.85rem;">
+                                <span class="fw-semibold" style="color: var(--gold-primary);">@activity.UserEmail</span>
+                                <span class="text-muted"> @activity.Message</span>
+                            </p>
+                            <small class="text-muted" style="font-size: 0.75rem;">@activity.Timestamp.ToLocalTime().ToString("MMM dd, h:mm tt")</small>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <p>No activity yet.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<ProjectDto> projects = new();
+    private List<TaskDto> allTasks = new();
+    private List<TaskDto> recentTasks = new();
+    private List<ActivityLogDto>? activities;
+    private int completedCount;
+    private int openCount;
+    private string? tenantName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (TaskManagementSaaS.Client.Infrastructure.CustomUserFactory.RequiresTenantCreation)
+        {
+            Navigation.NavigateTo("/create-tenant");
+            return;
+        }
+
+        // Read workspace name from claims
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        tenantName = authState.User.FindFirst("TenantName")?.Value;
+
+        try 
+        {
+            projects = await ProjectService.GetAllAsync();
+            allTasks = await TaskService.GetAllAsync();
+            activities = await ActivityService.GetRecentAsync(10);
+
+            completedCount = allTasks.Count(t => t.Status == TaskManagementSaaS.Domain.Enums.TaskItemStatus.Completed);
+            openCount = allTasks.Count(t => t.Status == TaskManagementSaaS.Domain.Enums.TaskItemStatus.Open);
+            recentTasks = allTasks.OrderByDescending(t => t.CreatedAt).Take(8).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+    private string GetPriorityColor(TaskManagementSaaS.Domain.Enums.TaskPriority priority) => priority switch
+    {
+        TaskManagementSaaS.Domain.Enums.TaskPriority.High or TaskManagementSaaS.Domain.Enums.TaskPriority.Urgent => "#FF5F56",
+        TaskManagementSaaS.Domain.Enums.TaskPriority.Medium => "#FFBD2E",
+        _ => "#27C93F"
+    };
+
+    private string GetStatusBorderClass(TaskManagementSaaS.Domain.Enums.TaskItemStatus status) => status switch
+    {
+        TaskManagementSaaS.Domain.Enums.TaskItemStatus.Open => "border-secondary",
+        TaskManagementSaaS.Domain.Enums.TaskItemStatus.InProgress => "border-primary",
+        TaskManagementSaaS.Domain.Enums.TaskItemStatus.Completed => "border-success",
+        _ => "border-light"
+    };
+
+    private string GetStatusTextClass(TaskManagementSaaS.Domain.Enums.TaskItemStatus status) => status switch
+    {
+        TaskManagementSaaS.Domain.Enums.TaskItemStatus.Open => "text-muted",
+        TaskManagementSaaS.Domain.Enums.TaskItemStatus.InProgress => "text-primary",
+        TaskManagementSaaS.Domain.Enums.TaskItemStatus.Completed => "text-success",
+        _ => "text-white"
+    };
+}

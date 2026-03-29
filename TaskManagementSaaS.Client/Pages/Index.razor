@@ -1,0 +1,88 @@
+@page "/"
+@layout MainLayout
+
+<div class="landing-page">
+    <div class="container">
+        <!-- Hero Section -->
+        <div class="landing-hero">
+            <div class="hero-content">
+                <h1 class="hero-title">Task Management,<br />Simplified.</h1>
+                <p class="hero-subtitle">Organize your team's work with projects, tasks, and clear priorities. Built for teams that value clarity over complexity.</p>
+                <div class="hero-actions">
+                    <a href="authentication/login?returnUrl=/dashboard" class="btn btn-gold btn-lg">Get Started</a>
+                    <a href="#features" class="btn btn-outline-gold btn-lg">Learn More</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div id="features" class="features-section">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <span class="oi oi-folder"></span>
+                        </div>
+                        <h4>Projects</h4>
+                        <p>Create workspaces and organize your work into focused projects. Keep everything in one place.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <span class="oi oi-task"></span>
+                        </div>
+                        <h4>Tasks</h4>
+                        <p>Create tasks with descriptions and priority levels. Assign, claim, and track progress in real time.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="feature-card">
+                        <div class="feature-icon">
+                            <span class="oi oi-people"></span>
+                        </div>
+                        <h4>Team Management</h4>
+                        <p>Add team members, assign roles, and control access. Everyone sees what they need to.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- How It Works -->
+        <div class="how-it-works">
+            <h2>How It Works</h2>
+            <div class="steps-grid">
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <h5>Sign Up</h5>
+                    <p>Create your account and name your workspace.</p>
+                </div>
+                <div class="step-divider"></div>
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <h5>Add Projects</h5>
+                    <p>Set up projects to organize your team's work.</p>
+                </div>
+                <div class="step-divider"></div>
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <h5>Create Tasks</h5>
+                    <p>Break work into tasks with priorities and descriptions.</p>
+                </div>
+                <div class="step-divider"></div>
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <h5>Collaborate</h5>
+                    <p>Invite your team. They claim and complete tasks.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="landing-cta">
+            <h2>Ready to get organized?</h2>
+            <p>Start managing your team's tasks in minutes.</p>
+            <a href="authentication/login?returnUrl=/dashboard" class="btn btn-gold btn-lg">Create Your Workspace</a>
+        </div>
+    </div>
+</div>

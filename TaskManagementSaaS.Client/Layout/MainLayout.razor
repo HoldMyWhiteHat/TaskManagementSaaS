@@ -1,0 +1,31 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            <div class="search-bar d-none d-md-block">
+                <input type="text" class="form-control bg-dark border-secondary text-white" placeholder="Search tasks..." style="border-radius: 20px; width: 300px; padding-left: 1rem;">
+            </div>
+            <div class="user-actions d-flex align-items-center gap-3">
+                <LoginDisplay />
+            </div>
+        </div>
+
+        <article class="content px-4 py-4">
+            <div class="container-fluid">
+                @Body
+            </div>
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>

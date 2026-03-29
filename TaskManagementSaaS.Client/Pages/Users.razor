@@ -1,0 +1,160 @@
+@page "/users"
+@using Microsoft.AspNetCore.Authorization
+@using TaskManagementSaaS.Client.Services
+@using TaskManagementSaaS.Application.DTO.Users
+@inject UserService UserService
+@inject IJSRuntime JS
+@inject NavigationManager Navigation
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Users</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">User Management</h1>
+    <button class="btn btn-gold" @onclick="() => showCreateDialog = true">
+        <i class="bi bi-person-fill-add me-2"></i> Add User
+    </button>
+</div>
+
+@if (showCreateDialog)
+{
+    <div class="glass-card mb-4" style="border-left: 3px solid var(--gold-primary);">
+        <h5 class="mb-3" style="color: var(--gold-primary);">Add New User</h5>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label text-muted small">Full Name</label>
+                <input type="text" class="form-control bg-dark text-white border-secondary" @bind="newUser.Username" placeholder="e.g. John Doe" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-muted small">Email Address</label>
+                <input type="email" class="form-control bg-dark text-white border-secondary" @bind="newUser.Email" placeholder="john@example.com" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label text-muted small">Role</label>
+                <select class="form-select bg-dark text-white border-secondary" @bind="newUser.Role">
+                    <option value="User">User</option>
+                    <option value="Admin">Admin</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end gap-2">
+                <button class="btn btn-gold w-100" @onclick="HandleCreateUser">Add</button>
+                <button class="btn btn-outline-secondary" @onclick="() => showCreateDialog = false">Cancel</button>
+            </div>
+        </div>
+        <p class="mt-3 text-muted small mb-0">
+            <i class="bi bi-info-circle me-1"></i> The user can sign in with this email to access the workspace.
+        </p>
+    </div>
+}
+
+@if (users == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border spinner-border-sm" style="color: var(--gold-primary);" role="status"></div>
+    </div>
+}
+else if (!users.Any())
+{
+    <div class="glass-card">
+        <div class="empty-state">
+            <p>No users in this workspace yet. Click "Add User" to invite your team.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="glass-card p-0 overflow-hidden">
+        <table class="table table-dark table-hover mb-0" style="--bs-table-bg: transparent;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--glass-border);">
+                    <th class="ps-4 py-3 text-muted small fw-bold" style="width: 30%;">NAME</th>
+                    <th class="py-3 text-muted small fw-bold" style="width: 40%;">EMAIL</th>
+                    <th class="py-3 text-muted small fw-bold" style="width: 15%;">ROLE</th>
+                    <th class="pe-4 py-3 text-end text-muted small fw-bold" style="width: 15%;">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in users)
+                {
+                    <tr style="border-bottom: 1px solid var(--glass-border); vertical-align: middle;">
+                        <td class="ps-4">
+                            <div class="py-4">
+                                <span class="fw-medium">@(user.Username.Contains("@") ? user.Username.Split('@')[0] : user.Username)</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="py-4 text-muted">@user.Email</div>
+                        </td>
+                        <td>
+                            <div class="py-4">
+                                <span class="badge rounded-pill" 
+                                      style="background: @(user.Role == "Admin" ? "rgba(242, 210, 169, 0.1)" : "rgba(255,255,255,0.05)"); border: 1px solid @(user.Role == "Admin" ? "var(--gold-primary)" : "var(--glass-border)"); color: @(user.Role == "Admin" ? "var(--gold-primary)" : "var(--text-muted)"); padding: 0.4rem 0.85rem;">
+                                    @user.Role
+                                </span>
+                            </div>
+                        </td>
+                        <td class="pe-4 text-end">
+                            <div class="py-4">
+                                @if (user.Role != "Admin")
+                                {
+                                    <button class="btn btn-sm btn-outline-danger border-0" @onclick="() => DeleteUser(user.Id)">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<UserDto>? users;
+    private bool showCreateDialog = false;
+    private CreateUserDto newUser = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (TaskManagementSaaS.Client.Infrastructure.CustomUserFactory.RequiresTenantCreation)
+        {
+            Navigation.NavigateTo("/create-tenant");
+            return;
+        }
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        users = await UserService.GetAllUsersAsync();
+    }
+
+    private async Task HandleCreateUser()
+    {
+        if (string.IsNullOrWhiteSpace(newUser.Email) || string.IsNullOrWhiteSpace(newUser.Username)) return;
+        try 
+        {
+            var result = await UserService.CreateUserAsync(newUser);
+            if (result.HasValue)
+            {
+                newUser = new();
+                showCreateDialog = false;
+                await LoadUsers();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", "Error adding user: " + ex.Message);
+        }
+    }
+
+    private async Task DeleteUser(Guid userId)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", "Are you sure you want to remove this user? This cannot be undone."))
+        {
+            await UserService.DeleteUserAsync(userId);
+            await LoadUsers();
+        }
+    }
+}

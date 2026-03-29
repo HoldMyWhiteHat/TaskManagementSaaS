@@ -1,0 +1,257 @@
+@page "/tasks"
+@using Microsoft.AspNetCore.Authorization
+@using TaskManagementSaaS.Client.Services
+@using TaskManagementSaaS.Application.DTO.Tasks
+@inject TaskService TaskService
+@inject ProjectService ProjectService
+@inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Navigation
+@attribute [Authorize]
+
+<PageTitle>Tasks</PageTitle>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="mb-0">Tasks</h1>
+    <AuthorizeView Roles="Admin">
+        <button class="btn btn-gold" @onclick="() => showCreateDialog = true">
+            <i class="bi bi-plus-lg me-2"></i> New Task
+        </button>
+    </AuthorizeView>
+</div>
+
+@if (showCreateDialog)
+{
+    <div class="glass-card mb-4 shadow-xl" style="border-left: 4px solid var(--gold-primary);">
+        <h5 class="mb-4" style="color: var(--gold-primary);">Create New Task</h5>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label text-muted small">Task Title</label>
+                <input type="text" class="form-control" @bind="newTask.Title" placeholder="What needs to be done?" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small">Project</label>
+                <select class="form-select bg-dark text-white border-secondary" @bind="selectedProjectId">
+                     <option value="">Select Project...</option>
+                     @if (projects != null)
+                     {
+                         @foreach (var p in projects)
+                         {
+                             <option value="@p.Id">@p.Name</option>
+                         }
+                     }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted small">Priority</label>
+                <select class="form-select bg-dark text-white border-secondary" @bind="newTask.Priority">
+                    @foreach (var priority in Enum.GetValues<TaskManagementSaaS.Domain.Enums.TaskPriority>())
+                    {
+                        <option value="@priority">@priority</option>
+                    }
+                </select>
+            </div>
+            <div class="col-12">
+                <label class="form-label text-muted small">Description</label>
+                <textarea class="form-control" @bind="newTask.Description" rows="2" placeholder="Add some context..."></textarea>
+            </div>
+            <div class="col-12 d-flex gap-2">
+                <button class="btn btn-gold" @onclick="CreateTask">Create Task</button>
+                <button class="btn btn-outline-secondary" @onclick="() => showCreateDialog = false">Cancel</button>
+            </div>
+        </div>
+    </div>
+}
+
+@if (tasks == null)
+{
+    <div class="text-center py-5">
+        <div class="spinner-border text-gold-subtle" role="status"></div>
+    </div>
+}
+else
+{
+    <div class="glass-card p-0 overflow-hidden">
+        <table class="table table-dark table-hover mb-0" style="--bs-table-bg: transparent;">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--glass-border);">
+                    <th class="ps-4 py-3 text-muted small fw-bold" style="width: 35%;">TASK TITLE</th>
+                    <th class="py-3 text-muted small fw-bold" style="width: 15%;">PRIORITY</th>
+                    <th class="py-3 text-muted small fw-bold" style="width: 15%;">STATUS</th>
+                    <th class="py-3 text-muted small fw-bold" style="width: 25%;">ASSIGNEE</th>
+                    <th class="pe-4 py-3 text-end text-muted small fw-bold" style="width: 10%;">ACTIONS</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var task in tasks)
+                {
+                    <tr style="border-bottom: 1px solid var(--glass-border); vertical-align: middle;">
+                        <td class="ps-4">
+                            <div class="py-4">
+                                <span class="fw-medium">@task.Title</span><br />
+                                <small class="text-muted d-block text-truncate" style="max-width: 300px;">@task.Description</small>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="py-4">
+                                <span class="badge" style="background: @GetPriorityColor(task.Priority); color: white; min-width: 60px;">
+                                    @task.Priority
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="py-4">
+                                <span class="badge rounded-pill border @GetStatusBorderClass(task.Status) @GetStatusTextClass(task.Status)" style="background: rgba(255,255,255,0.05);">
+                                    @task.Status
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="py-4">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--navy-light); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; font-size: 0.6rem;">
+                                        @(task.AssigneeName?[0].ToString() ?? "?")
+                                    </div>
+                                    <span class="small">@(task.AssigneeName ?? "Unassigned")</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="pe-4 text-end">
+                            <div class="py-4 btn-group">
+                                @if (task.Status == TaskManagementSaaS.Domain.Enums.TaskItemStatus.Open)
+                                {
+                                    <button class="btn btn-sm btn-gold" @onclick="() => ClaimTask(task.Id)">Claim</button>
+                                }
+                                else if (task.Status == TaskManagementSaaS.Domain.Enums.TaskItemStatus.InProgress)
+                                {
+                                    <button class="btn btn-sm btn-outline-success" style="border-color: #27C93F; color: #27C93F;" @onclick="() => CompleteTask(task.Id)">Complete</button>
+                                }
+                                <button class="btn btn-sm btn-outline-danger border-0 ms-2" @onclick="() => DeleteTask(task)">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<TaskDto>? tasks;
+    private List<TaskManagementSaaS.Application.DTO.Projects.ProjectDto>? projects;
+    private bool showCreateDialog = false;
+    private CreateTaskDto newTask = new();
+    private string selectedProjectId = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (TaskManagementSaaS.Client.Infrastructure.CustomUserFactory.RequiresTenantCreation)
+        {
+            Navigation.NavigateTo("/create-tenant");
+            return;
+        }
+        await LoadTasks();
+        projects = await ProjectService.GetAllAsync();
+    }
+
+    private async Task LoadTasks()
+    {
+        tasks = await TaskService.GetAllAsync();
+    }
+
+    private async Task CreateTask()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(newTask.Title) || string.IsNullOrEmpty(selectedProjectId)) return;
+            if (!Guid.TryParse(selectedProjectId, out var parsedProjId)) return;
+            newTask.ProjectId = parsedProjId;
+
+            await TaskService.CreateAsync(newTask);
+            newTask = new() { Priority = TaskManagementSaaS.Domain.Enums.TaskPriority.Medium };
+            selectedProjectId = "";
+            showCreateDialog = false;
+            await LoadTasks();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", "Error creating task: " + ex.Message);
+        }
+    }
+
+    private async Task ClaimTask(Guid id)
+    {
+        try
+        {
+            await TaskService.ClaimAsync(id);
+            await LoadTasks();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", "Error claiming task: " + ex.Message);
+        }
+    }
+
+    private async Task CompleteTask(Guid id)
+    {
+        try
+        {
+            await TaskService.CompleteAsync(id);
+            await LoadTasks();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", "Error completing task: " + ex.Message);
+        }
+    }
+
+    private async Task DeleteTask(TaskDto task)
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            var role = user.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? user.FindFirst("https://taskmanagement.com/roles")?.Value;
+
+            if (task.Status != TaskManagementSaaS.Domain.Enums.TaskItemStatus.Completed && role == "Admin")
+            {
+                 // Allowed functionality handled by Server
+            }
+
+            if (await JS.InvokeAsync<bool>("confirm", "Are you sure you want to delete this task?"))
+            {
+                await TaskService.DeleteAsync(task.Id);
+                await LoadTasks();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("alert", "Error deleting task: " + ex.Message);
+        }
+    }
+
+    private string GetPriorityColor(TaskManagementSaaS.Domain.Enums.TaskPriority priority) => priority switch
+    {
+        TaskManagementSaaS.Domain.Enums.TaskPriority.High or TaskManagementSaaS.Domain.Enums.TaskPriority.Urgent => "#FF5F56",
+        TaskManagementSaaS.Domain.Enums.TaskPriority.Medium => "#FFBD2E",
+        _ => "#27C93F"
+    };
+
+    private string GetStatusBorderClass(TaskManagementSaaS.Domain.Enums.TaskItemStatus status) => status switch
+    {
+        TaskManagementSaaS.Domain.Enums.TaskItemStatus.Open => "border-secondary",
+        TaskManagementSaaS.Domain.Enums.TaskItemStatus.InProgress => "border-primary",
+        TaskManagementSaaS.Domain.Enums.TaskItemStatus.Completed => "border-success",
+        _ => "border-light"
+    };
+
+    private string GetStatusTextClass(TaskManagementSaaS.Domain.Enums.TaskItemStatus status) => status switch
+    {
+        TaskManagementSaaS.Domain.Enums.TaskItemStatus.Open => "text-muted",
+        TaskManagementSaaS.Domain.Enums.TaskItemStatus.InProgress => "text-primary",
+        TaskManagementSaaS.Domain.Enums.TaskItemStatus.Completed => "text-success",
+        _ => "text-white"
+    };
+}
