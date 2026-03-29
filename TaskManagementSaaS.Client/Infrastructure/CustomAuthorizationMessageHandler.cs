@@ -11,7 +11,7 @@ namespace TaskManagementSaaS.Client.Infrastructure
             : base(accessor, navigationManager)
         {
             ConfigureHandler(
-                authorizedUrls: new[] { "https://localhost:5001" },
+                authorizedUrls: new[] { navigationManager.BaseUri },
                 scopes: new[] { "openid", "profile", "email" });
         }
     }
