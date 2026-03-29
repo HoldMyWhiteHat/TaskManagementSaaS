@@ -120,6 +120,10 @@ app.UseMiddleware<SecurityHeadersMiddleware>();
 // 3. HTTPS Redirect
 app.UseHttpsRedirection();
 
+// 3.5. Serve Blazor WebAssembly
+app.UseBlazorFrameworkFiles();
+app.UseStaticFiles();
+
 // 4. HSTS for production (tells browsers to only use HTTPS)
 if (!app.Environment.IsDevelopment())
 {
@@ -144,5 +148,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers().RequireRateLimiting("fixed");
+
+// Fallback for Blazor WASM routing
+app.MapFallbackToFile("index.html");
 
 app.Run();

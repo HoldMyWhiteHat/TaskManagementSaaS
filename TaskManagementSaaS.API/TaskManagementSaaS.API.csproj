@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.24">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -20,6 +21,7 @@
     <ProjectReference Include="..\TaskManagementSaaS.Application\TaskManagementSaaS.Application.csproj" />
     <ProjectReference Include="..\TaskManagementSaaS.Infrastructure\TaskManagementSaaS.Infrastructure.csproj" />
     <ProjectReference Include="..\TaskManagementSaaS.Persistence\TaskManagementSaaS.Persistence.csproj" />
+    <ProjectReference Include="..\TaskManagementSaaS.Client\TaskManagementSaaS.Client.csproj" />
   </ItemGroup>
 
 </Project>

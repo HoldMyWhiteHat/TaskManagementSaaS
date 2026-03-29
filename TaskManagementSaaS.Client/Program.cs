@@ -30,7 +30,7 @@ builder.Services.AddOidcAuthentication(options =>
 builder.Services.AddScoped<CustomAuthorizationMessageHandler>();
 
 builder.Services.AddHttpClient("TaskManagementSaaS.API", client => 
-    client.BaseAddress = new Uri("https://localhost:5001/"))
+    client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress))
     .AddHttpMessageHandler<CustomAuthorizationMessageHandler>();
 
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>()
