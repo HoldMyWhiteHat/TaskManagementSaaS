@@ -26,8 +26,8 @@ namespace TaskManagementSaaS.API.Middleware
             // Restrict browser features
             context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
 
-            // Content Security Policy
-            context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; frame-ancestors 'none';");
+            // Content Security Policy - Configured for Blazor WASM and Auth0
+            context.Response.Headers.Append("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net; connect-src 'self' https://dev-5rjxr6k61ht2n50r.us.auth0.com; img-src 'self' data: https:; frame-ancestors 'none';");
 
             // Prevent caching of sensitive data
             if (context.Request.Path.StartsWithSegments("/api"))
