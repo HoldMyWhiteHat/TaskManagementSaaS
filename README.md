@@ -40,7 +40,6 @@ cd TaskManagementSaaS
 
 This file is gitignored. You need to create it manually:
 
-.json
 {
   "ConnectionStrings": {
     "DefaultConnection": "Server=.;Database=TaskManagementSaaS;Trusted_Connection=true;TrustServerCertificate=true;"
