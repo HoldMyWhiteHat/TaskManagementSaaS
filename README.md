@@ -122,17 +122,29 @@ Role must be "User" or "Admin".
 *Other endpoints*
 
 GET    /api/projects                         — list all projects
+
 DELETE /api/projects/{id}                    — delete a project
+
 POST   /api/projects/{id}/users/{userId}     — assign user to project
+
 GET    /api/tasks                            — list all tasks
+
 GET    /api/tasks?projectId={id}             — list tasks for a project
+
 DELETE /api/tasks/{id}                       — delete a task
+
 GET    /api/user                             — list workspace users
+
 DELETE /api/user/{id}                        — delete a user
+
 DELETE /api/user/me                          — delete own account
+
 DELETE /api/user/{userId}/project/{projectId} — unassign user from project
+
 GET    /api/activity/recent?count=10         — recent activity log
+
 POST   /api/auth/sync                        — first-login user sync
+
 GET    /api/tenants                          — tenant info
 
 
