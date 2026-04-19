@@ -72,6 +72,7 @@ App runs at https://localhost:____. Swagger is available at /swagger in developm
 
 All API endpoints require authentication (JWT Bearer token). Every request is automatically scoped to the caller's tenant.
 
+
 *Create a project (Admin only)*
 
 POST /api/projects
@@ -82,6 +83,7 @@ Content-Type: application/json
 }
 
 Response: "3fa8f64-517-4562-b3fc-2cf6aa6" (project ID)
+
 
 *Create a task (Admin only)*
 
@@ -96,6 +98,7 @@ Content-Type: application/json
 }
 
 Priority values: 0 = Low, 1 = Medium, 2 = High, 3 = Urgent
+
 
 *Claim a task*
 
@@ -118,6 +121,7 @@ Content-Type: application/json
 }
 
 Role must be "User" or "Admin".
+
 
 *Other endpoints*
 
@@ -151,10 +155,15 @@ GET    /api/tenants                          — tenant info
 # Project Structure
 
 TaskManagementSaaS.API/              — ASP.NET Core host, controllers, middleware (auth, security headers, exception handling)
+
 TaskManagementSaaS.Client/           — Blazor WebAssembly SPA (pages, layouts, services)
+
 TaskManagementSaaS.Application/      — Business logic layer, CQRS commands/queries, DTOs, MediatR handlers
+
 TaskManagementSaaS.Domain/           — Domain entities (Tenant, User, Project, TaskItem, ActivityLog), enums, interfaces
+
 TaskManagementSaaS.Infrastructure/   — Infrastructure services (user context resolution from JWT claims)
+
 TaskManagementSaaS.Persistence/      — EF Core DbContext, entity configurations, migrations
 
 
